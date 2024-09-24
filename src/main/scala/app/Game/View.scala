@@ -13,25 +13,26 @@ def gameView =
       autoFocus := true,
       onKeyDown --> (_.key match {
         case key if key.length == 1 =>
-          input.update(_ + key)
+          input.update(_ ++ key)
           parseRomaji(input.now()) match {
             case RomajiState.Complete(jp) =>
-              japanese.update(_ + jp)
+              japanese.update(_ ++ jp)
               input.set("")
             case RomajiState.Invalid => input.set("")
             case RomajiState.Partial(jp, rest) =>
-              japanese.update(_ + jp)
+              japanese.update(_ ++ jp)
               input.set(rest)
             case RomajiState.Progress =>
           }
         case "Backspace" | "Delete" =>
           (if input.now().nonEmpty then input else japanese)
             .update(_.dropRight(1))
+        case _ =>
       }),
       div(
           cls := "flex flex-col items-center",
           span(
-              text <-- japanese.signal.combineWith(input.signal).map(_ ++ _)
+              text <-- japanese.signal.combineWithFn(input.signal)(_ ++ _)
           )
       )
   )
