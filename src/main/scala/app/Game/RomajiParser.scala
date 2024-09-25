@@ -10,9 +10,11 @@ object RomajiParser:
   private val isVowel: Char => Boolean =
     Seq('a', 'i', 'u', 'e', 'o').contains
 
-  def parseRomaji(romaji: String): RomajiState =
-    val lowerCase = romaji.toLowerCase
-    lowerCase.take(2).toList match {
+  val parseRomaji: String => RomajiState =
+    parseLowerRomaji /* compose { _.toLowerCase } */ // 必ず小文字が入るため
+
+  private def parseLowerRomaji(romaji: String): RomajiState =
+    romaji.toList match {
       case 'n' :: 'n' :: Nil => RomajiState.Complete("ん")
       case c1 :: c2 :: Nil if c1 == c2 =>
         RomajiState.Partial("っ", c2.toString)
@@ -21,8 +23,8 @@ object RomajiParser:
       case _ =>
         romajiMap
           .collectFirst {
-            case (k, v) if k.startsWith(lowerCase) =>
-              if lowerCase == k then RomajiState.Complete(v)
+            case (k, v) if k.startsWith(romaji) =>
+              if romaji == k then RomajiState.Complete(v)
               else RomajiState.Progress
           }
           .getOrElse(RomajiState.Invalid)

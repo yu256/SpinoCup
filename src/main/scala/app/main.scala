@@ -14,7 +14,7 @@ lazy val app =
 
   span(
       child <-- isStarted.signal.map {
-        if _ then gameView else startScreen(_ => isStarted.set(true))
+        if _ then gameView() else startScreen(_ => isStarted.set(true))
       }
   )
 
