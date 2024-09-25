@@ -16,7 +16,7 @@ lazy val root = project
 
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "2.4.0",
-      "com.raquo" %%% "laminar" % "17.1.0",
+      "com.github.japgolly.scalajs-react" %%% "core" % "2.1.1",
       "org.typelevel" %% "cats-core" % "2.12.0"
     ),
   )
