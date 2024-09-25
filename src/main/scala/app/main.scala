@@ -2,7 +2,6 @@ package app
 
 import Game.gameView
 import com.raquo.laminar.api.L.*
-import components.*
 import org.scalajs.dom
 
 @main def main(): Unit =
@@ -10,15 +9,14 @@ import org.scalajs.dom
   renderOnDomContentLoaded(appContainer, app)
 
 lazy val app =
-  val isStarted = Var(false)
+  val gooAppId = Var(None: Option[String])
 
   span(
-      child <-- isStarted.signal.map {
-        if _ then gameView() else startScreen(_ => isStarted.set(true))
-      }
+      child <-- gooAppId.signal.map(
+          _.fold(startScreen(gooAppId.set compose Some.apply))(gameView))
   )
 
-def startScreen(onClickStart: dom.MouseEvent => Unit) =
+def startScreen(appIdSetter: String => Unit) =
   div(
       cls := "flex flex-col items-center justify-center h-screen bg-gray-800",
       h1(
@@ -27,10 +25,8 @@ def startScreen(onClickStart: dom.MouseEvent => Unit) =
       ),
       p(
           cls := "text-lg text-center text-gray-400 mb-8",
-          "下のボタンを押してスタート"
+          "gooのapp_idを入力してください。"
       ),
-      myButton(
-          "Start Game",
-          onClickStart
-      )
+      input(cls := "p-2 border border-gray-600 rounded-md mb-4",
+          placeholder := "app_id", onInput.mapToValue --> appIdSetter)
   )

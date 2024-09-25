@@ -3,16 +3,20 @@ package app.Game
 import com.raquo.laminar.api.L.*
 import org.scalajs.dom
 
+import scala.concurrent.Future
 import scala.concurrent.duration.given
 import scala.scalajs.js
 import scala.scalajs.js.timers.setInterval
 
-def gameView() =
+def gameView(gooAppId: String) =
   import RomajiParser.*
+
+  val genSentence: () => Future[(String, String)] =
+    SentenceGen(gooAppId).genSentence
 
   val japanese = Var("")
   val input = Var("")
-  val sentence = Var(SentenceGen.genSentence())
+  val sentence = Var("" -> "") // fixme sentenceを生成する
 
   val score = Var(0)
   val timeLeft = Var(60)
@@ -26,7 +30,7 @@ def gameView() =
   def restartGame(): Unit =
     timeLeft.set(60)
     score.set(0)
-    sentence.set(SentenceGen.genSentence())
+    sentence.set("" -> "") // fixme sentenceを生成する
     japanese.set("")
     input.set("")
     isGameOver.set(false)
@@ -68,7 +72,7 @@ def gameView() =
           (japanese.now(), sentence.now()) match {
             case (jp, (_, hiragana)) if jp == hiragana =>
               score.update(_ + 10)
-              sentence.set(SentenceGen.genSentence())
+              sentence.set("" -> "") // fixme sentenceを生成する
               japanese.set("")
             case (jp, (_, hiragana)) if !hiragana.startsWith(jp) =>
               japanese.update(_.dropRight(1))
