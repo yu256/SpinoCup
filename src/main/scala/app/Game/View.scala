@@ -1,6 +1,7 @@
 package app.Game
 
 import com.raquo.laminar.api.L.*
+import org.scalajs.dom
 
 import scala.concurrent.duration.given
 import scala.scalajs.js
@@ -31,9 +32,17 @@ def gameView() =
     isGameOver.set(false)
 
   div(
+      idAttr := "typing-area",
       cls := "h-screen w-screen flex flex-col justify-center items-center",
       tabIndex := 0,
       autoFocus := true,
+      onBlur --> { ev =>
+        ev.preventDefault()
+        dom.document
+          .getElementById("typing-area")
+          .asInstanceOf[dom.HTMLElement]
+          .focus()
+      },
       onKeyDown --> { ev =>
         if !isGameOver.now() then
           ev.key match {
@@ -86,16 +95,20 @@ def gameView() =
               "残り時間: ",
               child.text <-- timeLeft.signal.map(_.toString ++ "s")
           ),
-          div(
-              cls := "text-2xl text-red-500 mt-4",
-              child.text <-- isGameOver.signal.map(
-                  if _ then "Game Over" else "")
-          ),
-          button(
-              cls := "mt-4 p-2 bg-blue-500 text-white rounded",
-              "Restart",
-              onClick --> { _ => restartGame() },
-              disabled <-- isGameOver.signal.map(!_)
-          )
+          child.maybe <-- isGameOver.signal.map {
+            Option.when(_) {
+              div(
+                  div(
+                      cls := "text-2xl text-red-500 mt-4",
+                      "Game Over"
+                  ),
+                  button(
+                      cls := "mt-4 p-2 bg-blue-500 text-white rounded",
+                      "Restart",
+                      onClick --> { _ => restartGame() }
+                  )
+              )
+            }
+          }
       )
   )
