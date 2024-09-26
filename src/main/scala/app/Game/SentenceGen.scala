@@ -12,7 +12,7 @@ object SegmenterWrapper:
   @JSGlobal("Intl.Segmenter")
   private class Segmenter(locale: String, options: js.Dictionary[String])
       extends js.Object:
-    def segment(input: String): scalajs.js.Iterable[SegmentElem] = js.native
+    def segment(input: String): js.Iterable[SegmentElem] = js.native
 
   @js.native
   private trait SegmentElem extends js.Object:
@@ -28,11 +28,12 @@ object SegmenterWrapper:
       if segment.isWordLike
     yield segment.segment
 
-class SentenceGen(gooAppId: String):
-  private val markovChain = MarkovChain(3)
+class SentenceGen(gooAppId: String, chainLen: Int, toLearnText: String):
+  private val markovChain = MarkovChain(order = chainLen)
   markovChain.addText(SegmenterWrapper
-        .segmentText("") // fixme 学習データを入れる
+        .segmentText(toLearnText)
         .toVector)
+
   private val hiraganaConverter =
     HiraganaConverter.genHiraganaConverter(gooAppId)
 

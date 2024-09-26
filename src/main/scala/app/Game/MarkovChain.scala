@@ -20,7 +20,7 @@ class MarkovChain(val order: Int = 1):
 
   def generateText(maxWords: Int): String =
     if chain.isEmpty then return ""
-    var currentWords = chain.keys.toSeq(random.nextInt(chain.size))
+    var currentWords = chain.keys.toIndexedSeq(random.nextInt(chain.size))
     val result = mutable.ListBuffer[String]()
     result ++= currentWords
 

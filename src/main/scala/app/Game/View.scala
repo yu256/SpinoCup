@@ -3,34 +3,46 @@ package app.Game
 import com.raquo.laminar.api.L.*
 import org.scalajs.dom
 
-import scala.concurrent.Future
+import concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.given
-import scala.scalajs.js
 import scala.scalajs.js.timers.setInterval
+import scala.util.chaining.scalaUtilChainingOps
 
-def gameView(gooAppId: String) =
+def gameView(gooAppId: String, chainLen: Int, toLearnText: String) =
   import RomajiParser.*
 
-  val genSentence: () => Future[(String, String)] =
-    SentenceGen(gooAppId).genSentence
+  enum SentenceState:
+    case Loaded(sentence: (String, String))
+    case Loading(prev: Option[(String, String)])
 
   val japanese = Var("")
   val input = Var("")
-  val sentence = Var("" -> "") // fixme sentenceを生成する
+  val sentence = Var(SentenceState.Loading(None))
 
   val score = Var(0)
   val timeLeft = Var(60)
   val isGameOver = Var(false)
 
-  setInterval(1.second) {
-    if timeLeft.now() > 0 then timeLeft.update(_ - 1)
-    else isGameOver.set(true)
+  val genSentence =
+    val generator = SentenceGen(gooAppId, chainLen, toLearnText)
+    () => generator.genSentence().map(SentenceState.Loaded(_) pipe sentence.set)
+
+  genSentence().foreach { _ =>
+    setInterval(1.second) {
+      if timeLeft.now() > 0 then timeLeft.update(_ - 1)
+      else isGameOver.set(true)
+    }
   }
 
   def restartGame(): Unit =
     timeLeft.set(60)
     score.set(0)
-    sentence.set("" -> "") // fixme sentenceを生成する
+    sentence.update {
+      case SentenceState.Loaded(cur) =>
+        SentenceState.Loading(Some(cur))
+      case _ => throw Error("unreachable")
+    }
+    genSentence()
     japanese.set("")
     input.set("")
     isGameOver.set(false)
@@ -70,11 +82,17 @@ def gameView(gooAppId: String) =
             case _ =>
           }
           (japanese.now(), sentence.now()) match {
-            case (jp, (_, hiragana)) if jp == hiragana =>
+            case (jp, SentenceState.Loaded(_, hiragana)) if jp == hiragana =>
               score.update(_ + 10)
-              sentence.set("" -> "") // fixme sentenceを生成する
+              sentence.update {
+                case SentenceState.Loaded(prev) =>
+                  SentenceState.Loading(Some(prev))
+                case otherwise => otherwise
+              }
+              genSentence()
               japanese.set("")
-            case (jp, (_, hiragana)) if !hiragana.startsWith(jp) =>
+            case (jp, SentenceState.Loaded(_, hiragana))
+                if !hiragana.startsWith(jp) =>
               japanese.update(_.dropRight(1))
               score.update(_ - 5)
             case _ =>
@@ -83,8 +101,14 @@ def gameView(gooAppId: String) =
       div(
           cls := "flex flex-col items-center",
           div(
-              cls := "text-4xl",
-              text <-- sentence.signal.map(_._1)
+              cls := "text-4xl whitespace-pre-wrap",
+              text <-- sentence.signal.map {
+                case SentenceState.Loading(None) => "Loading..."
+                case SentenceState.Loading(Some((prevJp, prevHiragana))) =>
+                  s"Loading...\n$prevJp\n($prevHiragana)"
+                case SentenceState.Loaded((japanese, hiragana)) =>
+                  s"$japanese\n($hiragana)"
+              }
           ),
           span(
               text <-- japanese.signal.combineWithFn(input.signal)(_ ++ _)
@@ -109,7 +133,11 @@ def gameView(gooAppId: String) =
                   button(
                       cls := "mt-4 p-2 bg-blue-500 text-white rounded",
                       "Restart",
-                      onClick --> { _ => restartGame() }
+                      onClick --> { _ => restartGame() },
+                      disabled <-- sentence.signal.map {
+                        case SentenceState.Loading(_) => true
+                        case _                        => false
+                      }
                   )
               )
             }
