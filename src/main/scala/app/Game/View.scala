@@ -111,6 +111,7 @@ def gameView(gooAppId: String, chainLen: Int, toLearnText: String) =
               }
           ),
           span(
+              cls := "text-3xl mt-4",
               text <-- japanese.signal.combineWithFn(input.signal)(_ ++ _)
           ),
           div(
