@@ -47,4 +47,4 @@ class SentenceGen(gooAppId: String, chainLen: Int, toLearnText: String):
 
   def genSentence(): Future[(String, String)] =
     sentenceDeque += genSentenceWithHiragana()
-    sentenceDeque.removeLast()
+    sentenceDeque.removeHead()
