@@ -18,7 +18,7 @@ object RomajiParser:
       case 'n' :: 'n' :: Nil => RomajiState.Complete("ん")
       case c1 :: c2 :: Nil if c1 == c2 =>
         RomajiState.Partial("っ", c2.toString)
-      case 'n' :: c2 :: Nil if !isVowel(c2) =>
+      case 'n' :: c2 :: Nil if !isVowel(c2) && c2 != 'y' /* nya ~ nyo */ =>
         RomajiState.Partial("ん", c2.toString)
       case _ =>
         romajiMap
